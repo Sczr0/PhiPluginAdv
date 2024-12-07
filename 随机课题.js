@@ -6,13 +6,13 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 export class SelectSongs extends plugin {
   constructor() {
     super({
-      name: "随机谱面选择",
-      dsc: "随机选择满足条件的谱面",
+      name: "随机课题",
+      dsc: "随机课题曲目选择",
       event: "message",
       priority: 5000,
       rule: [
         {
-          reg: "^#随机课题(?:\\s(\\d+[+-]?))?(?:\\s(EZ|HD|IN|AT|ez|hd|in|at))?$",
+          reg: "^#随机课题(?:\\s(\\d+[+-]?))?(?:\\s(EZ|HD|IN|AT|ez|hd|in|at))?(?:\\s(平均|avg))?$", // 新增“平均”或“avg”参数
           fnc: "selectSongs",
         },
       ],
@@ -20,7 +20,7 @@ export class SelectSongs extends plugin {
   }
 
   loadSongs() {
-    const csvFilePath = path.join(__dirname, 'songs.csv');
+    const csvFilePath = path.join(__dirname, '../phi-plugin/resources/info/difficulty.csv'); // 读取新的文件路径
     const csvData = fs.readFileSync(csvFilePath, 'utf-8');
     const rows = csvData.split('\n').filter((row) => row.trim() !== '');
     const header = rows.shift().split(',');
@@ -58,7 +58,7 @@ export class SelectSongs extends plugin {
     return sum >= range[0] && sum <= range[1];
   }
 
-  randomSelectSongs(songs, targetSumCondition = null, difficultyFilter = null) {
+  randomSelectSongs(songs, targetSumCondition = null, difficultyFilter = null, avg = false) {
     const validDifficulties = ['EZ', 'HD', 'IN', 'AT'];
     const targetRange = this.parseRangeCondition(targetSumCondition);
 
@@ -93,6 +93,41 @@ export class SelectSongs extends plugin {
       return `没有找到符合条件的谱面（难度: ${difficultyFilter || '全部'}, 定数条件: ${targetSumCondition}）。`;
     }
 
+    // 处理平均参数
+    if (avg) {
+      // 按定数大小分组，确保三首歌定数相差不大于1
+      const possibleCombinations = [];
+      for (let i = 0; i < filteredSongs.length - 2; i++) {
+        for (let j = i + 1; j < filteredSongs.length - 1; j++) {
+          for (let k = j + 1; k < filteredSongs.length; k++) {
+            const diff1 = Math.abs(filteredSongs[i].rating - filteredSongs[j].rating);
+            const diff2 = Math.abs(filteredSongs[j].rating - filteredSongs[k].rating);
+            const diff3 = Math.abs(filteredSongs[i].rating - filteredSongs[k].rating);
+
+            if (diff1 <= 1 && diff2 <= 1 && diff3 <= 1) {
+              const total = filteredSongs[i].rating + filteredSongs[j].rating + filteredSongs[k].rating;
+              if (targetRange && this.isConditionMet(targetRange, total)) {
+                possibleCombinations.push([filteredSongs[i], filteredSongs[j], filteredSongs[k]]);
+              }
+            }
+          }
+        }
+      }
+
+      if (possibleCombinations.length === 0) {
+        return `没有找到符合条件的谱面（难度: ${difficultyFilter || '全部'}, 定数条件: ${targetSumCondition}，平均定数）。`;
+      }
+
+      const selectedCombo = possibleCombinations[Math.floor(Math.random() * possibleCombinations.length)];
+      const shuffledCombo = selectedCombo.sort(() => Math.random() - 0.5);
+      const result = shuffledCombo
+        .map((song) => `${song.id} - ${song.difficulty} ${song.rating}`)
+        .join('\n');
+      const totalSum = shuffledCombo.reduce((sum, song) => sum + song.rating, 0);
+      return `随机课题生成成功:\n${result}\n总和: ${totalSum}`;
+    }
+
+    // 如果没有启用平均参数，继续正常的随机选择
     const combinations = [];
     const ratings = filteredSongs.map((song) => song.rating);
 
@@ -126,6 +161,7 @@ export class SelectSongs extends plugin {
     const args = e.msg.replace('#随机课题', '').trim().split(' ');
     let targetSumCondition = null;
     let difficultyFilter = null;
+    let avg = false;
 
     // 扫描传入的命令参数，优先解析数字和难度
     args.forEach((arg) => {
@@ -135,6 +171,9 @@ export class SelectSongs extends plugin {
       } else if (['EZ', 'HD', 'IN', 'AT'].includes(arg.toUpperCase())) {
         // 将传入的难度参数转换为大写
         difficultyFilter = arg.toUpperCase();
+      } else if (['平均', 'avg'].includes(arg)) {
+        // 启用平均参数
+        avg = true;
       }
     });
 
@@ -169,17 +208,12 @@ export class SelectSongs extends plugin {
       return;
     }
 
-    // 调试日志：检查传入的参数和目标条件
-    console.log(`接收到的命令参数： ${args}`);
-    console.log(`定数条件（targetSumCondition）： ${targetSumCondition}`);
-    console.log(`难度过滤条件（difficultyFilter）： ${difficultyFilter}`);
-
     try {
       const songs = this.loadSongs();
-      const result = this.randomSelectSongs(songs, targetSumCondition, difficultyFilter);
+      const result = this.randomSelectSongs(songs, targetSumCondition, difficultyFilter, avg);
       e.reply(result);
-    } catch (error) {
-      e.reply(`发生错误：${error.message}`);
+    } catch (err) {
+      e.reply(`发生错误: ${err.message}`);
     }
   }
 }
