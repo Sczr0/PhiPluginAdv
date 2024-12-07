@@ -38,19 +38,19 @@ export class PhigrosUpdatePlugin extends plugin {
       priority: 100,
       rule: [
         {
-          reg: '^/new$', // 命令
+          reg: '^[#/]new$', // 命令
           fnc: 'handlePhigrosUpdateCommand'
         },
         {
-          reg: '^/version$', // 获取游戏版本命令
+          reg: '^[#/]version$', // 获取游戏版本命令
           fnc: 'handleGameVersionCommand'
         },
         {
-          reg: '^/cloudbot$', // 云端版本检查命令
+          reg: '^[#/]cloudbot$', // 云端版本检查命令
           fnc: 'handleCloudVersionCheck'
         },
         {
-          reg: '^/新曲信息帮助$',
+          reg: '^[#/]新曲信息帮助$',
           fnc: 'help',
         }
       ]
@@ -225,17 +225,33 @@ export class PhigrosUpdatePlugin extends plugin {
     try {
       // 获取本地的 Phi-Plugin 版本
       const localVersion = await this.fetchFileContent(readmeURL);
-      const localVersionMatch = localVersion.match(/Phi-Plugin-(\d+\.\d+\.\d+)/);
-      if (!localVersionMatch || !localVersionMatch[1]) {
-        await e.reply('无法获取本地 Phi-Plugin 版本，请稍后再试。', false, { at: false });
+      const localVersionMatch = localVersion.match(/Phigros-(\d+\.\d+\.\d+)/);
+      const localVersionNumber = localVersionMatch ? localVersionMatch[1] : null;
+      
+      if (!localVersionNumber) {
+        await e.reply('无法获取本地版本信息。', false, { at: false });
         return;
       }
-
-      const currentVersion = localVersionMatch[1];
-      await e.reply(`当前 Phi-Plugin 版本：${currentVersion}`, false, { at: false });
+      // 获取云端的 Phi-Plugin 版本
+      const cloudVersion = await this.fetchFileContent(readmeURL);
+      const cloudVersionMatch = cloudVersion.match(/Phigros-(\d+\.\d+\.\d+)/);
+      const cloudVersionNumber = cloudVersionMatch ? cloudVersionMatch[1] : null;
+      
+      if (!cloudVersionNumber) {
+        await e.reply('无法获取云端版本信息。', false, { at: false });
+        return;
+      }
+      // 对比本地和云端版本
+      if (localVersionNumber === cloudVersionNumber) {
+        await e.reply('正常：本地和云端版本一致。', false, { at: false });
+      } else if (localVersionNumber < cloudVersionNumber) {
+        await e.reply(`警告：云端版本更新 (${cloudVersionNumber})，本地版本较旧 (${localVersionNumber})。`, false, { at: false });
+      } else {
+        await e.reply('本地版本较新，已是最新版本。', false, { at: false });
+      }
     } catch (error) {
       console.error('Error in handleCloudVersionCheck:', error.message);
-      await e.reply('云端版本检查时发生错误，请稍后再试。', false, { at: false });
+      await e.reply('获取云端版本信息时发生错误，请稍后再试。', false, { at: false });
     }
   }
 }
