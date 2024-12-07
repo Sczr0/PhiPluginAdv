@@ -12,7 +12,7 @@ export class SelectSongs extends plugin {
       priority: 5000,
       rule: [
         {
-          reg: "^#随机课题(?:\\s(\\d+[+-]?))?(?:\\s(EZ|HD|IN|AT|ez|hd|in|at))?(?:\\s(平均|avg))?$", // 新增“平均”或“avg”参数
+          reg: "^[#/]随机课题(?:\\s(\\d+[+-]?))?(?:\\s(EZ|HD|IN|AT|ez|hd|in|at))?(?:\\s(平均|avg))?$",
           fnc: "selectSongs",
         },
       ],
@@ -20,7 +20,7 @@ export class SelectSongs extends plugin {
   }
 
   loadSongs() {
-    const csvFilePath = path.join(__dirname, '../phi-plugin/resources/info/difficulty.csv'); // 读取新的文件路径
+    const csvFilePath = path.join(__dirname, '../phi-plugin/resources/info/difficulty.csv');
     const csvData = fs.readFileSync(csvFilePath, 'utf-8');
     const rows = csvData.split('\n').filter((row) => row.trim() !== '');
     const header = rows.shift().split(',');
@@ -58,7 +58,7 @@ export class SelectSongs extends plugin {
     return sum >= range[0] && sum <= range[1];
   }
 
-  randomSelectSongs(songs, targetSumCondition = null, difficultyFilter = null, avg = false) {
+  randomSelectSongs(songs, targetSumCondition = null, difficultyFilter = null, isAverage = false) {
     const validDifficulties = ['EZ', 'HD', 'IN', 'AT'];
     const targetRange = this.parseRangeCondition(targetSumCondition);
 
@@ -69,6 +69,7 @@ export class SelectSongs extends plugin {
     let filteredSongs = [];
     for (const song of songs) {
       if (difficultyFilter) {
+        // 如果指定了难度过滤，则只筛选该难度
         if (song[difficultyFilter] !== null) {
           filteredSongs.push({
             id: song.id,
@@ -77,6 +78,7 @@ export class SelectSongs extends plugin {
           });
         }
       } else {
+        // 如果没有指定难度，遍历所有难度
         for (const difficulty of validDifficulties) {
           if (song[difficulty] !== null) {
             filteredSongs.push({
@@ -93,52 +95,46 @@ export class SelectSongs extends plugin {
       return `没有找到符合条件的谱面（难度: ${difficultyFilter || '全部'}, 定数条件: ${targetSumCondition}）。`;
     }
 
-    // 处理平均参数
-    if (avg) {
-      // 按定数大小分组，确保三首歌定数相差不大于1
-      const possibleCombinations = [];
-      for (let i = 0; i < filteredSongs.length - 2; i++) {
-        for (let j = i + 1; j < filteredSongs.length - 1; j++) {
-          for (let k = j + 1; k < filteredSongs.length; k++) {
-            const diff1 = Math.abs(filteredSongs[i].rating - filteredSongs[j].rating);
-            const diff2 = Math.abs(filteredSongs[j].rating - filteredSongs[k].rating);
-            const diff3 = Math.abs(filteredSongs[i].rating - filteredSongs[k].rating);
+    const combinations = [];
+    const ratings = filteredSongs.map((song) => song.rating);
 
-            if (diff1 <= 1 && diff2 <= 1 && diff3 <= 1) {
-              const total = filteredSongs[i].rating + filteredSongs[j].rating + filteredSongs[k].rating;
-              if (targetRange && this.isConditionMet(targetRange, total)) {
-                possibleCombinations.push([filteredSongs[i], filteredSongs[j], filteredSongs[k]]);
-              }
+    // 如果启用了“平均”筛选
+    if (isAverage) {
+      for (let i = 0; i < ratings.length - 2; i++) {
+        for (let j = i + 1; j < ratings.length - 1; j++) {
+          const requiredThird = targetRange[0] - ratings[i] - ratings[j];
+          const upperLimitThird = targetRange[1] - ratings[i] - ratings[j];
+
+          for (let k = j + 1; k < ratings.length; k++) {
+            // 判断三首歌曲的定数差距是否不超过1
+            const diff1 = Math.abs(ratings[i] - ratings[j]);
+            const diff2 = Math.abs(ratings[j] - ratings[k]);
+            const diff3 = Math.abs(ratings[i] - ratings[k]);
+
+            // 如果三首歌的定数差距都不超过1，并且符合定数总和的条件
+            if (
+              diff1 <= 1 &&
+              diff2 <= 1 &&
+              diff3 <= 1 &&
+              ratings[k] >= requiredThird &&
+              ratings[k] <= upperLimitThird
+            ) {
+              combinations.push([filteredSongs[i], filteredSongs[j], filteredSongs[k]]);
             }
           }
         }
       }
+    } else {
+      // 如果没有启用“平均”筛选，则按正常逻辑筛选
+      for (let i = 0; i < ratings.length - 2; i++) {
+        for (let j = i + 1; j < ratings.length - 1; j++) {
+          const requiredThird = targetRange[0] - ratings[i] - ratings[j];
+          const upperLimitThird = targetRange[1] - ratings[i] - ratings[j];
 
-      if (possibleCombinations.length === 0) {
-        return `没有找到符合条件的谱面（难度: ${difficultyFilter || '全部'}, 定数条件: ${targetSumCondition}，平均定数）。`;
-      }
-
-      const selectedCombo = possibleCombinations[Math.floor(Math.random() * possibleCombinations.length)];
-      const shuffledCombo = selectedCombo.sort(() => Math.random() - 0.5);
-      const result = shuffledCombo
-        .map((song) => `${song.id} - ${song.difficulty} ${song.rating}`)
-        .join('\n');
-      const totalSum = shuffledCombo.reduce((sum, song) => sum + song.rating, 0);
-      return `随机课题生成成功:\n${result}\n总和: ${totalSum}`;
-    }
-
-    // 如果没有启用平均参数，继续正常的随机选择
-    const combinations = [];
-    const ratings = filteredSongs.map((song) => song.rating);
-
-    for (let i = 0; i < ratings.length - 2; i++) {
-      for (let j = i + 1; j < ratings.length - 1; j++) {
-        const requiredThird = targetRange[0] - ratings[i] - ratings[j];
-        const upperLimitThird = targetRange[1] - ratings[i] - ratings[j];
-
-        for (let k = j + 1; k < ratings.length; k++) {
-          if (ratings[k] >= requiredThird && ratings[k] <= upperLimitThird) {
-            combinations.push([filteredSongs[i], filteredSongs[j], filteredSongs[k]]);
+          for (let k = j + 1; k < ratings.length; k++) {
+            if (ratings[k] >= requiredThird && ratings[k] <= upperLimitThird) {
+              combinations.push([filteredSongs[i], filteredSongs[j], filteredSongs[k]]);
+            }
           }
         }
       }
@@ -151,7 +147,7 @@ export class SelectSongs extends plugin {
     const selectedCombo = combinations[Math.floor(Math.random() * combinations.length)];
     const shuffledCombo = selectedCombo.sort(() => Math.random() - 0.5);
     const result = shuffledCombo
-      .map((song) => `${song.id} - ${song.difficulty} ${song.rating}`)
+      .map((song) => `${song.id} ${song.difficulty} ${song.rating}`)
       .join('\n');
     const totalSum = shuffledCombo.reduce((sum, song) => sum + song.rating, 0);
     return `随机课题生成成功:\n${result}\n总和: ${totalSum}`;
@@ -161,7 +157,7 @@ export class SelectSongs extends plugin {
     const args = e.msg.replace('#随机课题', '').trim().split(' ');
     let targetSumCondition = null;
     let difficultyFilter = null;
-    let avg = false;
+    let isAverage = false;
 
     // 扫描传入的命令参数，优先解析数字和难度
     args.forEach((arg) => {
@@ -171,9 +167,9 @@ export class SelectSongs extends plugin {
       } else if (['EZ', 'HD', 'IN', 'AT'].includes(arg.toUpperCase())) {
         // 将传入的难度参数转换为大写
         difficultyFilter = arg.toUpperCase();
-      } else if (['平均', 'avg'].includes(arg)) {
-        // 启用平均参数
-        avg = true;
+      } else if (['平均', 'avg'].includes(arg.toLowerCase())) {
+        // 如果传入“平均”或“avg”，启用平均筛选
+        isAverage = true;
       }
     });
 
@@ -208,12 +204,22 @@ export class SelectSongs extends plugin {
       return;
     }
 
+    // 开始计时
+    console.time('随机课题处理时间');
+
     try {
       const songs = this.loadSongs();
-      const result = this.randomSelectSongs(songs, targetSumCondition, difficultyFilter, avg);
+      const result = this.randomSelectSongs(songs, targetSumCondition, difficultyFilter, isAverage);
+
+      // 结束计时
+      console.timeEnd('随机课题处理时间');
+      
       e.reply(result);
-    } catch (err) {
-      e.reply(`发生错误: ${err.message}`);
+    } catch (error) {
+      // 结束计时
+      console.timeEnd('随机课题处理时间');
+      
+      e.reply(`发生错误：${error.message}`);
     }
   }
 }
