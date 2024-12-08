@@ -12,7 +12,7 @@ export class SelectSongs extends plugin {
       priority: 5000,
       rule: [
         {
-          reg: "^[#/]随机课题(?:\\s(\\d+[+-]?))?(?:\\s(EZ|HD|IN|AT|ez|hd|in|at))?(?:\\s(平均|avg))?$",
+          reg: "^[#/]随机课题(?:\\s*(\\d+[+-]?))?(?:\\s(EZ|HD|IN|AT|ez|hd|in|at))?(?:\\s(平均|avg))?$",
           fnc: "selectSongs",
         },
       ],
