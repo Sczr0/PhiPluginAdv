@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { segment } from 'oicq';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
