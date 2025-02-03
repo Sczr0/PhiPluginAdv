@@ -4,7 +4,6 @@ import { segment } from 'oicq';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
-// 🌟 全局缓存：启动时预加载，速度起飞！
 let cachedSongs = null;
 let ratingMap = new Map(); // 定数→歌曲池
 let sortedRatings = []; // 排序后的定数列表
@@ -13,7 +12,7 @@ export class SelectSongs extends plugin {
   constructor() {
     super({
       name: "随机课题",
-      dsc: "帮你随机选三首Phigros课题曲！",
+      dsc: "随机选三首Phigros课题曲",
       event: "message",
       priority: 5000,
       rule: [
@@ -25,21 +24,21 @@ export class SelectSongs extends plugin {
       ],
     });
 
-    // 🚀 启动加载数据！
+    // 启动加载数据
     if (!cachedSongs) {
       cachedSongs = this.loadSongs();
       this.buildRatingMap(cachedSongs);
     }
   }
 
-  // 🎵 加载歌曲数据（附带错误保护！）
+  // 加载歌曲数据（附带错误保护）
   loadSongs() {
     try {
       const csvPath = path.join(__dirname, '../phi-plugin/resources/info/difficulty.csv');
       
-      // 🚨 如果文件不存在，直接抛错！
+      // 如果文件不存在，直接抛错！
       if (!fs.existsSync(csvPath)) {
-        throw new Error('PHI_PLUGIN_MISSING'); // 自定义错误码
+        throw new Error('PHI_PLUGIN_MISSING');
       }
   
       // 读取CSV文件
@@ -59,7 +58,7 @@ export class SelectSongs extends plugin {
           AT: parseFloat(cols[4]) || null,
         };
       }).filter(song => 
-        ![song.EZ, song.HD, song.IN, song.AT].every(r => r === null) // 过滤全难度null的歌曲
+        ![song.EZ, song.HD, song.IN, song.AT].every(r => r === null) 
       );
     } catch (err) {
       if (err.message === 'PHI_PLUGIN_MISSING') {
@@ -71,38 +70,35 @@ export class SelectSongs extends plugin {
     }
   }
 
-  // 🌈 构建定数索引
+  // 构建定数索引
   buildRatingMap(songs) {
     ratingMap.clear();
     for (const song of songs) {
       const key = song.rating;
       if (!ratingMap.has(key)) ratingMap.set(key, []);
-      ratingMap.get(key).push(song); // 现在包含完整的difficulty信息
+      ratingMap.get(key).push(song);
     }
     sortedRatings = [...ratingMap.keys()].sort((a, b) => a - b);
   }
 
-  // 🚀 超速选曲核心！
-  // 🌟 超速选曲核心！(改得blingbling的~)
   fastSelectSongs(targetSum, difficulty, isAverage) {
   const sumRange = this.parseRange(targetSum);
   const candidates = [];
 
-  // 🔥 平均模式：三姐妹定数差≤1（现在会优先找同定数啦！）
+  // 平均模式：三姐妹定数差≤1（优先找同定数）
   if (isAverage) {
-    // 智能生成目标定数和（若未指定）
+    // 生成目标定数和（若未指定）
     const [targetMin, targetMax] = this.parseRange(targetSum);
     const targetTotal = targetMin !== 3 
       ? targetMin 
       : Math.floor(Math.random() * 46) + 3; // 3~48随机选一个数
 
-    // 🚀 性能优化三部曲
-    // 1. 动态计算允许的定数范围
+    // 动态计算允许的定数范围
     const avg = Math.round(targetTotal / 3);
     const minRating = Math.max(1, avg - 2);
     const maxRating = avg + 2;
 
-    // 2. 构建候选池（预过滤+随机采样）
+    // 构建候选池（预过滤+随机采样）
     const candidatePool = [];
     for (let r = minRating; r <= maxRating; r++) {
       const songs = ratingMap.get(r) || [];
@@ -152,7 +148,7 @@ export class SelectSongs extends plugin {
     return { success: false };
   }
 
-    // 🔥 普通模式：数学魔法剪枝
+    // 普通模式
     for (let i = 0; i < sortedRatings.length; i++) {
       const a = sortedRatings[i];
       for (let j = i; j < sortedRatings.length; j++) {
@@ -173,7 +169,7 @@ export class SelectSongs extends plugin {
       }
     }
 
-    // 🎲 随机抽取幸运组合
+    // 随机抽取组合
     if (candidates.length === 0) return { success: false };
     const [a, b, c] = candidates[Math.floor(Math.random() * candidates.length)];
     return {
@@ -183,7 +179,7 @@ export class SelectSongs extends plugin {
         const poolB = ratingMap.get(b);
         const poolC = ratingMap.get(c);
         
-        // 🛡️ 三重保险防重复机制
+        // 防重复机制
         let attempts = 0;
         while (attempts++ < 100) { // 最多尝试100次
           const songs = [
@@ -204,12 +200,12 @@ export class SelectSongs extends plugin {
     };
   }
 
-  // 🛠️ 工具函数：从数组随机选n个
+  // 从数组随机选n个
   pickRandom(arr, n) {
     return [...arr].sort(() => 0.5 - Math.random()).slice(0, n);
   }
 
-  // 🎯 解析定数范围（支持30+/20-格式）
+  // 解析定数范围（支持30+/20-格式）
   parseRange(input) {
     if (!input) return [3, 48]; // 默认全随机
     const str = input.toString().trim();
@@ -217,7 +213,6 @@ export class SelectSongs extends plugin {
     // 处理纯平均指令（没有数字）
     if (str === '' || isNaN(parseInt(str))) return [3, 48];
   
-    // 原有+-逻辑保持不变
     if (str.endsWith('+')) {
       const num = parseInt(str.slice(0, -1)) || 0;
       return [num, Infinity];
@@ -229,9 +224,9 @@ export class SelectSongs extends plugin {
     return isNaN(num) ? [3, 48] : [num, num];
   }
 
-  // 💬 主逻辑：处理用户指令
+  // 主逻辑：处理用户指令
   async selectSongs(e) {
-    // 🚩 先检查是否加载到歌曲数据
+    // 先检查是否加载到歌曲数据
     if (!cachedSongs || cachedSongs.length === 0) {
       const phiPluginPath = path.join(__dirname, '../phi-plugin');
       const isPhiPluginInstalled = fs.existsSync(phiPluginPath);
@@ -254,13 +249,13 @@ export class SelectSongs extends plugin {
       return;
     }
   
-    // 🕵️♂️ 正则捕获参数
+    // 正则捕获参数
     const match = e.msg.match(/^[#/]随机课题\s*(\d+[+-]?)?\s*([EZHDINATezhdinat]+)?\s*(平均|avg)?/i);
     const targetSum = match?.[1] || null;
     const difficulty = match?.[2]?.toUpperCase() || null;
     const isAverage = !!match?.[3];
   
-    // 🎭 过滤指定难度的歌曲
+    // 过滤指定难度的歌曲
     const filtered = difficulty
     ? cachedSongs
         .filter(song => song[difficulty] !== null)
@@ -284,17 +279,17 @@ export class SelectSongs extends plugin {
       return;
     }
   
-    // 🚦 重建索引
+    // 重建索引
     this.buildRatingMap(filtered);
   
-    // ⚡ 执行筛选
+    // 执行筛选
     const result = this.fastSelectSongs(targetSum, difficulty, isAverage);
     if (!result.success) {
       e.reply('没有找到组合，可能条件太严格啦 ~ 或者————你在整活？（笑）');
       return;
     }
   
-    // 🎉 构造回复
+    // 构造回复
     const total = result.songs.reduce((sum, s) => sum + s.rating, 0);
     const reply = result.songs.map(s => 
       `◈ ${s.id} [${s.difficulty}] 定数: ${s.rating}`
@@ -302,7 +297,7 @@ export class SelectSongs extends plugin {
     e.reply(`🎵 随机课题生成成功！三首曲子请收好～\n${reply}\n✨ 定数总和：${total}`);
   }
 
-  // 📖 帮助命令（图片在此！）
+  // 帮助命令
   async sendHelp(e) {
     e.reply([
       "✨ 使用说明：\n" +
