@@ -25,11 +25,15 @@
 
 - **DeepSeek 用户协议**  
   根据 [DeepSeek 用户协议](https://cdn.deepseek.com/policies/zh-CN/deepseek-terms-of-use.html) 第 4.2 条款：
-  > “在符合法律规定和我们的条款的条件下，您对本服务的输入与输出享有以下权利：（1）您保留在提交的输入中拥有的任何权利、所有权和利益（如有）；（2）我们将本服务输出的内容的任何权利、所有权和利益（如有）归属于您。”<button class="citation-flag" data-index="5">
+  > “在符合法律规定和我们的条款的条件下，您对本服务的输入与输出享有以下权利：
+  >
+  > （1）您保留在提交的输入中拥有的任何权利、所有权和利益（如有）；
+  >
+  > （2）我们将本服务输出的内容的任何权利、所有权和利益（如有）归属于您。”
 
 - **OpenAI 用户协议**  
   根据 [OpenAI 用户协议](https://openai.com/policies/row-terms-of-use/) 的“Ownership of Content”部分：
-  > “As between you and OpenAI, and to the extent permitted by applicable law, you (a) retain your ownership rights in Input and (b) own the Output. We hereby assign to you all our right, title, and interest, if any, in and to Output. ”<button class="citation-flag" data-index="9">
+  > “As between you and OpenAI, and to the extent permitted by applicable law, you (a) retain your ownership rights in Input and (b) own the Output. We hereby assign to you all our right, title, and interest, if any, in and to Output. ”
 
 - **Anthropic 用户协议**  
   根据 [Anthropic 用户协议](https://www.anthropic.com/legal/consumer-terms) 的第 4 条（Inputs, Outputs, and Materials）：
@@ -39,6 +43,6 @@
 
 ### 许可证
 
-本项目自 **2025 年 3 月 6 日**起采用 [Parity Public License](https://paritylicense.com/)。此前版本仍受原许可证约束（如有）。
+本项目自 **2025 年 3 月 6 日**起采用 [Parity Public License](https://paritylicense.com/)。此前版本仍受原许可证约束。
 
 Parity Public License 要求任何基于本项目的衍生作品都必须以相同的方式开源，并免费提供给最终用户<button class="citation-flag" data-index="4">。
