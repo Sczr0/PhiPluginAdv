@@ -32,7 +32,7 @@
   > “As between you and OpenAI, and to the extent permitted by applicable law, you (a) retain your ownership rights in Input and (b) own the Output. We hereby assign to you all our right, title, and interest, if any, in and to Output. ”<button class="citation-flag" data-index="9">
 
 - **Anthropic 用户协议**  
-  根据 **Anthropic 用户协议** 的第 4 条（Inputs, Outputs, and Materials）：
+  根据 [Anthropic 用户协议](https://www.anthropic.com/legal/consumer-terms) 的第 4 条（Inputs, Outputs, and Materials）：
   > “As between you and Anthropic, and to the extent permitted by applicable law, you retain any right, title, and interest that you have in the Inputs you submit. Subject to your compliance with our Terms, we assign to you all of our right, title, and interest—if any—in Outputs.”
 
 ### 许可证
