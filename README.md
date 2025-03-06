@@ -21,7 +21,7 @@
 
 ### 关于代码所有权
 
-根据以下用户协议的相关条款，我对本项目中的代码及相关内容拥有全部权利：
+根据以下用户协议的相关条款，我对本项目中的代码拥有全部权利：
 
 - **DeepSeek 用户协议**  
   根据 [DeepSeek 用户协议](https://cdn.deepseek.com/policies/zh-CN/deepseek-terms-of-use.html) 第 4.2 条款：
@@ -34,6 +34,8 @@
 - **Anthropic 用户协议**  
   根据 [Anthropic 用户协议](https://www.anthropic.com/legal/consumer-terms) 的第 4 条（Inputs, Outputs, and Materials）：
   > “As between you and Anthropic, and to the extent permitted by applicable law, you retain any right, title, and interest that you have in the Inputs you submit. Subject to your compliance with our Terms, we assign to you all of our right, title, and interest—if any—in Outputs.”
+
+**除代码部分外，其余部分由原著作权人保留一切权利。**
 
 ### 许可证
 
